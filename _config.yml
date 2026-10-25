@@ -1,0 +1,10 @@
+title: Sujeet Srivastava
+description: Notes on building and measuring systems
+author: Sujeet Srivastava
+url: "https://sujeet-srivastava.github.io"
+baseurl: ""
+theme: minima
+markdown: kramdown
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
