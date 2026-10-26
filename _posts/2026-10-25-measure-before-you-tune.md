@@ -7,28 +7,29 @@ description: "A retriever that found the evidence for 39% of dev questions fell 
 tags: [rag, video, evaluation, retrieval, multimodal]
 ---
 
-I am building a video RAG: a system that answers questions about a film by finding the moments that matter, in the dialogue and in the frames, and handing them to a model along with the timecodes it used.
+A retriever I was about to call the winner found the right scene for **39%** of my development questions. On questions it had never seen, it found **13%**.
 
-The motivation is a gap in how entertainment catalogues are searched. A catalogue is a media company's main asset, but its metadata describes titles (genre, cast, synopsis), not what happens inside them. Everything below the title is found by people watching footage, and each team does that separately: editors tag by hand, promo producers scrub for moments, standards teams re-screen for regional edits, and recommendations fall back on thin metadata for new releases. Manual tagging does not keep up with a growing catalogue, and it only captures what someone thought to tag at the time.
+| Evidence in the top 5 | *Charade* dev | *Charade* held-out | *Destroy All Planets* held-out |
+| --- | --- | --- | --- |
+| image search (`image_mean`) | **39%** | 13% | 19% |
+| dialogue search (`text`) | 18% | **37%** | **36%** |
 
-Retrieval over the content itself answers the questions nobody planned for, such as a new themed rail or a new compliance rule. Grounding a model in retrieved, timecoded segments keeps its answers tied to footage someone can check, where a model on its own would invent details about the catalogue. And the index is built once, at ingest, then shared by discovery, marketing, compliance and advertising. The payoff shows up in all of them: better cold-start for new releases, library titles resurfacing when they fit a theme, less time spent hunting for moments for promos and compliance edits, and scene-level context for ad targeting and brand suitability. Multimodal models can now describe and embed video well enough to make this practical.
+Plain dialogue search, which I had nearly written off, held steady.
 
-That makes scale the point of the project, so two goals shape it. It runs entirely on one local machine, a Mac Studio with open models and no cloud services. And it has to have a clear path to a large-scale deployment on Google Cloud without a rewrite.
+The system is a video RAG. It answers questions about a full-length film by finding the moments that matter, in the dialogue and in the frames, and handing them to a model with the timecodes it used. It runs on one Mac Studio with open models.
 
-The second goal is designed in from the start. Every pipeline stage is a file-in, file-out task, started when a file lands in an inbox folder, with events shaped like the notifications Cloud Storage sends when an object is uploaded. Locally that folder is a directory; in production it becomes a bucket, and each stage runs as its own container on Cloud Run. The seam for that is in the code today, though the Cloud Run runner itself is not built yet. Each stage also has a written contract (inputs, outputs, compute limits, timeouts, retries) that travels with it.
-
-The local machine is where the decisions get made, because there they are cheap. At scale, every stage you keep is a cost multiplied by the size of the catalogue and by the number of questions. Describing every frame of one film with a vision model took about 2.5 hours here; sending eight images with every question makes each answer slower and more expensive. Before anything is scaled out, I want evidence that each stage earns its place, and that is what the evaluation in this post provides. It is also what will make the move to the cloud safe: the same frozen question sets, floors and ceilings become the regression test when a local model is swapped for a hosted one, or a component is replaced to scale.
-
-It has already overturned one conclusion. The best image retriever put the right scene in its top 5 for **39%** of the development questions. That is 11 times the random floor and looked like a clear win over plain dialogue search, which managed 18%.
-
-On questions it had never seen, the same retriever fell to **13%** on one film and **19%** on another. Plain dialogue search held at **37%** and **36%**.
-
-This post is about how those numbers were made trustworthy enough to catch that, and why I now treat the evaluation harness, not the retriever, as the real deliverable of a RAG project. Once you can say "this change moved 2 of 28 questions, and here are the floor and the ceiling," every chunker, embedder and fusion rule becomes a cheap experiment. Without that, every change is a guess.
+This post is about the evaluation that caught that reversal, and why I now treat the evaluation harness, not the retriever, as the real deliverable of a RAG project. Once you can say "this change moved 2 of 28 questions, and here are the floor and the ceiling," every chunker, embedder and fusion rule becomes a cheap experiment. Without that, every change is a guess.
 
 Every number below comes with its sample size. The samples are small, and I say so where it matters.
 
 * TOC
 {:toc}
+
+## Why measure this carefully
+
+A media company's catalogue is described at the level of titles: genre, cast, synopsis. Anything *inside* a film is found by someone scrubbing footage. Editors tag by hand, promo producers hunt for moments, and standards teams re-screen for regional edits. An index over the content itself, built once at ingest, could serve all of them. Grounding answers in timecoded segments keeps them tied to footage someone can check.
+
+That only pays off at catalogue scale. There, every pipeline stage is a cost multiplied by every title and every question: describing every frame of one film with a vision model took 2.5 hours here. So before anything moves to the cloud, each stage has to earn its place. The same frozen question sets then become the regression test when a local model is swapped for a hosted one. Section 8 covers how the pipeline is built to make that move without a rewrite.
 
 ## The setup
 
@@ -206,7 +207,7 @@ With 60/30 the margin is 30 s and both pass. Change the stride to 50 s and the n
 
 Each node also has a pre-validation step (is the previous node's output fit to be my input?) and a post-validation step (does my output meet my own standards?). Both write result files and decide stop, warn or proceed. The dialogue summariser's 2% warn and 10% stop thresholds on flagged chunks, from section 6, are one example.
 
-The pipeline is event-driven on file drops into a bucket, and each node is a thin callback, so heavy steps such as frame description and embedding can move to Cloud Run while local development runs on sample assets. The orchestrator supports cycles, with loop-safety thresholds, even though today's flow is linear.
+The pipeline is event-driven. Every stage is a file-in, file-out task, started when a file lands in an inbox folder, with events shaped like the notifications Cloud Storage sends when an object is uploaded. Locally that folder is a directory; in production it becomes a bucket, and each stage runs as its own container on Cloud Run. Each node is a thin callback, so heavy steps such as frame description and embedding can move there while local development runs on sample assets. The seam for that is in the code today, though the Cloud Run runner itself is not built yet. The orchestrator supports cycles, with loop-safety thresholds, even though today's flow is linear.
 
 ## 9. Limitations
 
