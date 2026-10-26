@@ -34,6 +34,8 @@ Every number below comes with its sample size. The samples are small, and I say 
 
 The system answers questions about full-length films. It runs locally on a Mac Studio: the film is cut into 60-second windows, each window gets a dialogue vector (Whisper transcript, Qwen3-Embedding-0.6B) and frame vectors (one frame every 2 seconds, SigLIP2), and a question is matched against both. The test material is public-domain film: *Charade* (1963) for development, and *Destroy All Planets* and *Out of This World* as second films. Only questions that genuinely need the video are scored; anything a viewer could answer without watching is kept on the sheet but reported separately.
 
+The code, node contracts, question sheets and every result behind the numbers in this post are on GitHub: [sujeet-srivastava/video-rag](https://github.com/sujeet-srivastava/video-rag). The films themselves are not included; `data/SOURCES.md` lists where to get them.
+
 ## 1. Ground truth is the silent work
 
 Three films have question sheets:
@@ -222,6 +224,7 @@ The pipeline is event-driven on file drops into a bucket, and each node is a thi
 4. **Budget real human hours for ground truth.** Eight minutes a question is the cost of every number in this post.
 5. **Write contracts that encode cross-parameter rules**, not just schemas, and let validation decide stop or proceed.
 6. **Believe the held-out set over the dev set.** A dev winner can be a property of the questions you happened to write.
+7. If you want to reuse the harness (the oracle and random references, the answer ladder, the contracts), start with the [repository README](https://github.com/sujeet-srivastava/video-rag#readme).
 
 ---
 
