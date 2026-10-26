@@ -156,8 +156,8 @@ The judge and a human review agreed on 396 of 403 *Destroy All Planets* answers.
 The demo runs on *Destroy All Planets*: ask a question, see the retrieved windows with their timestamps, then the answer.
 
 <video controls preload="metadata" width="100%">
-  <source src="{{ '/assets/measure-before-you-tune/demo.mp4' | relative_url }}" type="video/mp4">
-  Your browser does not play embedded video. <a href="{{ '/assets/measure-before-you-tune/demo.mp4' | relative_url }}">Download the demo (MP4)</a>.
+  <source src="{{ '/assets/measure-before-you-tune/demo_1.mp4' | relative_url }}" type="video/mp4">
+  Your browser does not play embedded video. <a href="{{ '/assets/measure-before-you-tune/demo_1.mp4' | relative_url }}">Download the demo (MP4)</a>.
 </video>
 
 ## 8. Contracts that carry into production
